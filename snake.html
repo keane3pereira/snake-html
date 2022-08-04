@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    </head>
+    <body style="background-color: #e2e2e2">
+        <div class="container text-center"  style="font-family: courier;">
+            <p class="h3 p-2">SNAKE</p>
+            <div class="d-flex justify-content-around p-2">
+                <div class="input-group-prepend p-1">
+                    <span class="input-group-text" id="score_label">Score</span>
+                    <input type="text" readonly class="form-control" placeholder="0" id="score" aria-label="Score" aria-describedby="score_label">
+                </div>
+                <div class="input-group-prepend p-1">
+                    <span class="input-group-text" id="highscore_label">Highscore</span>
+                    <input type="text" readonly class="form-control" placeholder="0" id="highscore" aria-label="Highscore" aria-describedby="highscore_label">
+                </div>
+            </div>
+            <div class="row p-2" style="justify-content: center;">
+                <table class="table-hover" id="grid">
+                    <script>
+                        for(row = 0; row < 30; row ++){
+                            document.write("<tr>");
+                            for(col = 0; col < 30; col ++){
+                                document.write('<td class="bg-dark" style="height:15px; width: 15px;" id="' + row.toString() + "," + col.toString() + '">' + "</td>");
+                            }
+                            document.write("</tr>");
+                        }
+                    </script>
+                </table>
+            </div>
+        </div>
+
+        <script>
+
+            var n, direction, pos, head, body, food_pos, score, pause, lose, big;
+            var highscore = 0;
+            var speed_up = false;
+
+            function change_direction(number){
+                switch(number){
+                    case 87:    case 38:    if(window.direction != 'down')  window.direction = 'up';    break;
+                    case 83:    case 40:    if(window.direction != 'up')    window.direction = 'down';  break;
+                    case 68:    case 39:    if(window.direction != 'left')  window.direction = 'right'; break;
+                    case 65:    case 37:    if(window.direction != 'right') window.direction = 'left';  break;
+                    case 17:                window.speed_up = !window.speed_up; console.log(window.speed_up); break;
+                    
+                    case 32: 	if(window.pause == true)    window.pause = false;
+                    			else                        window.pause = true;
+                    break;
+                }
+            }
+
+            function get_pos() {
+                return Math.floor((Math.random() * (n - 2)) + 2)
+            }
+
+            function move(direction, x, y){
+                switch(direction){
+                    case 'up':      if(x <= 0)  x = window.n;           return [x - 1, y];
+                    case 'down':    if(x >= (window.n - 1)) x = -1;     return [x + 1, y];
+                    case 'right':   if(y >= (window.n - 1))  y = -1;    return [x, y + 1];
+                    case 'left':    if(y <= 0)  y = window.n;           return [x, y - 1];
+                }
+            }
+
+            function display(){
+                head.setAttribute("class", "bg-dark");
+                if(body.length > 0){
+                    for(i = 0; i < body.length; i ++){
+                        document.getElementById(window.body[i][0].toString() + "," + window.body[i][1].toString()).setAttribute("class", "bg-secondary");
+                    }
+                }
+                document.getElementById(food_pos[0].toString() + "," + food_pos[1].toString()).setAttribute("class", "bg-danger");
+                head = document.getElementById(window.pos[0].toString() + "," + window.pos[1].toString());
+                head.setAttribute("class", "bg-light");
+                if(window.big != false){
+                    document.getElementById(big[0] + "," + big[1]).setAttribute("class", "bg-warning");
+                }
+            }
+
+            function set_apple(){
+                window.food_pos = [get_pos(), get_pos()];
+                window.food = document.getElementById(food_pos[0].toString() + "," + food_pos[1].toString());
+                window.food.setAttribute("class", "bg-danger");
+                
+                if(window.score % 60 == 0){
+                    if(window.big == false){
+                        window.big = [get_pos(), get_pos()];
+                        setTimeout(function(){
+                            document.getElementById(window.big[0].toString() + "," + window.big[1].toString()).setAttribute("class", "bg-dark");
+                            window.big = false;
+                        }, 4800);
+                    }
+                } 
+            }
+
+            function grow(pos, score){
+                window.body.push(pos);
+                window.score += score;
+                document.getElementById("score").value = window.score;
+                if(window.score > window.highscore){
+                	window.highscore = window.score;
+                	document.getElementById("highscore").setAttribute("value", window.highscore);
+                }
+                set_apple();
+            }
+
+            function reset(){
+            	window.n = 30;
+	            window.direction = 'right';
+	            window.pos = [0,0]; /* y, x */
+	            window.head = document.getElementById(pos[0].toString() + "," + pos[1].toString());
+	            window.body = [];
+	            window.food_pos = [get_pos(), get_pos()];
+	            window.score = 0;
+	            window.pause = false;
+	            window.lose = false;
+                window.big = false;
+            }
+
+            function game(){
+                function onTimerTick() {
+                    /*console.log(pos)*/
+                    if(!window.pause){
+                    	if((window.food_pos[0] == window.pos[0]) && (window.food_pos[1] == window.pos[1]) ){
+                        	/*console.log("reached");*/
+	                        grow(window.food_pos, 10);
+	                    }
+                        if(window.big != false){
+                            if((window.pos[0] == window.big[0]) && (window.pos[1] == window.big[1]) ){
+                                var k = window.big;
+                                window.big = false;
+                                grow(k, 40);
+                            }
+                        }
+	                    
+	                    if(window.body.length > 0){
+	                        for(i = window.body.length - 1; i > 0; i--){
+	                            document.getElementById(window.body[i][0].toString() + "," + window.body[i][1].toString()).setAttribute("class", "bg-dark");
+	                            window.body[i] = window.body[i-1];
+	                        }
+
+	                        document.getElementById(window.body[0][0].toString() + "," + window.body[0][1].toString()).setAttribute("class", "bg-dark");
+	                        window.body[0] = window.pos;
+
+	                        if(window.body.length > 1){
+	                        	for(i = 1; i < window.body.length; i ++){
+		                        	if(window.body[i][0] == window.pos[0]){
+		                        		if(window.body[i][1] == window.pos[1]){
+		                        			window.lose = true;
+		                        		}
+		                        	}
+		                        }
+	                        }
+	                    }
+	                    if(window.lose){
+	                    	reset();
+		                    window.pause = true;
+	                    }
+	                    else{
+		                    window.pos = move(window.direction, window.pos[0], window.pos[1]);
+		                    display();
+	                    }
+                    }
+              	    setTimeout(onTimerTick, window.speed_up ? 40 : 100); // 33 milliseconds = ~ 30 frames per sec
+                }
+                onTimerTick()
+            }
+
+            $(document).ready(function(){
+            	alert("Press SPACE to start/pause.\nControls: W,A,S,D / Arrow Keys\nSpeed: <CTRL>");
+            	reset();
+	           	game();
+            	window.pause = true;
+
+                $(document).keydown(function(event){
+                    change_direction(event.which);
+                });
+            });
+        </script>
+    </body>
+</html>
